@@ -24,12 +24,15 @@ Windows were failing because the `patch` command used when patching the Snappy
 dependency was crashing.
 """
 
+from __future__ import annotations
+
+import functools
 import os
 import pathlib
 import re
 import shutil
 import subprocess
-from typing import Collection, Dict, Iterator, Optional, Sequence, Tuple
+from typing import Dict, Iterable, Optional, Sequence, Tuple
 
 from absl import app
 from absl import logging
@@ -39,48 +42,46 @@ def main(argv: Sequence[str]) -> None:
   if len(argv) > 1:
     raise app.UsageError(f"Unexpected argument: {argv[1]}")
 
-  # Map the patch executable paths to their versions; the versions are
-  # initialized to None, and will be resolved later. Note that the logic below
-  # uses the guaranteed ordering of dict keys so that executables found in
-  # earlier PATH entries take precedence over those found in later entries.
-  patch_executables: Dict[pathlib.Path, Optional[str]] = {
-    patch_executable: None for patch_executable in find_patch_executables()
-  }
+  patch_executables = find_patch_executables()
+  version_str_by_patch_executable = determine_patch_versions(patch_executables)
+  patch_executable_info = find_latest_version(version_str_by_patch_executable)
 
-  logging.info("Found %s patch executables: %s", len(patch_executables),
-    ", ".join(str(executable) for executable in patch_executables))
-  if not patch_executables:
-    raise NoPatchExecutableFoundError("no patch executables found")
+  print(patch_executable_info.executable.parent)
 
-  for patch_executable in tuple(patch_executables.keys()):
-    logging.info("Calculating version of %s", patch_executable)
-    patch_version = determine_patch_version(patch_executable)
-    if patch_version is None:
-      logging.info("Unable to determine version of %s", patch_executable)
-      del patch_executables[patch_executable]
+
+class PatchExecutableInfo:
+
+  def __init__(self, executable: pathlib.Path, version: str, order: int) -> None:
+    self.executable = executable
+    self.version = version
+    self.order = order
+
+  def version_tuple(self) -> Tuple[int, ...]:
+    return tuple(
+      int(version_component)
+      for version_component in self.version.split(".")
+    )
+
+  def __lt__(self, other: PatchExecutableInfo) -> bool:
+    self_version_tuple = self.version_tuple()
+    other_version_tuple = other.version_tuple()
+
+    if self_version_tuple == other_version_tuple:
+      # Order instances by their ordering in the PATH environment variable, if
+      # their versions are equal.
+      return self.order < other.order
     else:
-      logging.info("Version of %s is: %s", patch_executable, patch_version)
-      patch_executables[patch_executable] = patch_version
-
-  if not patch_executables:
-    raise NoPatchExecutableFoundError("unable to determine the versions "
-      "of the patch executables that were found")
-
-  # Sort the patch executable paths by version. Since list.sort() is stable, if
-  # two patch executables have the same version then preference will be given to
-  # the one that occurs earlier in the PATH.
-  patch_executable_paths = list(patch_executables.keys())
-  patch_executable_paths.sort(
-    key = lambda x: sort_key_from_version(patch_executables[x]))
-
-  patch_executable_path = patch_executable_paths[0]
-  logging.info("Using patch executable: %s (version %s)", patch_executable_path,
-    patch_executables[patch_executable_path])
-
-  print(patch_executable_path)
+      # Intentionally invert the sort order by using > instead of < so that
+      # newer versions are ordered before older versions.
+      return self_version_tuple > other_version_tuple
 
 
-def find_patch_executables() -> Iterator[pathlib.Path]:
+def find_patch_executables() -> Tuple[pathlib.Path]:
+  # Store the executables as keys in a dict. This achieves two goals: (1) it
+  # removes duplicates and (2) keeps the keys ordered by their insertion order
+  # (because dict guarantees iteration order is the same as insertion order).
+  patch_executables: Dict[pathlib.Path, None] = {}
+
   path = os.environ.get("PATH")
   if not path:
     raise PathEnvironmentVariableNotSetError(
@@ -96,7 +97,53 @@ def find_patch_executables() -> Iterator[pathlib.Path]:
 
     patch_path_str = shutil.which("patch", path=path_entry)
     if patch_path_str:
-      yield pathlib.Path(patch_path_str)
+      patch_executables[pathlib.Path(patch_path_str)] = None
+
+  logging.info("Found %s patch executables: %s", len(patch_executables),
+    ", ".join(str(executable) for executable in patch_executables))
+  if not patch_executables:
+    raise NoPatchExecutableFoundError("no patch executables found")
+
+  return tuple(patch_executables)
+
+
+def determine_patch_versions(
+  patch_executables: Iterable[pathlib.Path]
+) -> Dict[pathlib.Path, str]:
+  version_str_by_patch_executable: Dict[pathlib.Path, str] = {}
+  for patch_executable in patch_executables:
+    logging.info("Calculating version of %s", patch_executable)
+    patch_version = determine_patch_version(patch_executable)
+    if patch_version is None:
+      logging.info("Unable to determine version of %s", patch_executable)
+    else:
+      logging.info("Version of %s is: %s", patch_executable, patch_version)
+      version_str_by_patch_executable[patch_executable] = patch_version
+
+  if not version_str_by_patch_executable:
+    raise NoPatchExecutableFoundError("unable to determine the versions "
+      "of the patch executables that were found")
+
+  return version_str_by_patch_executable
+
+
+def find_latest_version(
+  version_str_by_patch_executable: Dict[pathlib.Path, str]
+) -> PatchExecutableInfo:
+  patch_executable_infos = sorted(
+    PatchExecutableInfo(patch_executable, patch_version, order)
+    for (order, (patch_executable, patch_version))
+    in enumerate(version_str_by_patch_executable.items())
+  )
+
+  patch_executable_info = patch_executable_infos[0]
+  patch_executable = patch_executable_info.executable
+  patch_executable_version = patch_executable_info.version
+
+  logging.info("Using patch executable: %s (version %s)", patch_executable,
+    patch_executable_version)
+
+  return patch_executable_info
 
 
 def determine_patch_version(patch_executable: pathlib.Path) -> Optional[str]:
@@ -111,13 +158,6 @@ def determine_patch_version(patch_executable: pathlib.Path) -> Optional[str]:
       return match.group(1)
 
   return None
-
-
-def sort_key_from_version(version: str) -> Tuple[int, ...]:
-  return tuple(
-    int(version_component)
-    for version_component in version.split(".")
-  )
 
 
 class PathEnvironmentVariableNotSetError(Exception):
