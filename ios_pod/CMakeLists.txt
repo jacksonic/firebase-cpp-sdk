@@ -29,33 +29,21 @@ set(FIREBASE_POD_PRIVATE_HEADER_DIR
   CACHE STRING ""
 )
 
-# Copy build files to trigger pod install as it requires a valid Xcode project
-file(
-  COPY
-    Podfile
-    empty.cc
-    empty_CMakeLists.txt DESTINATION
-  "${FIREBASE_POD_DIR}"
-)
-
-# Rename cmake file
-file(
-  RENAME
-    "${FIREBASE_POD_DIR}/empty_CMakeLists.txt"
-    "${FIREBASE_POD_DIR}/CMakeLists.txt"
-)
-
-message("Downloading CocoaPods...")
-
+message("Downloading firebase-ios-sdk sources using CocoaPods")
 execute_process(
-  COMMAND /bin/bash -c
-          "mkdir -p ${FIREBASE_POD_DIR} && cd ${FIREBASE_POD_DIR} && cmake . -G Xcode && pod install"
-  OUTPUT_VARIABLE pods_output
+  COMMAND
+    "${FIREBASE_PYTHON_EXECUTABLE}"
+    "${CMAKE_CURRENT_LIST_DIR}/get_ios_sdk_via_cocoapods.py"
+    "${CMAKE_CURRENT_LIST_DIR}"
+    "${FIREBASE_POD_DIR}"
+  RESULT_VARIABLE
+    pods_result
 )
-
-message("${pods_output}")
-
-
+if(pods_result EQUAL 0)
+  message("Downloading firebase-ios-sdk sources using CocoaPods done")
+else()
+  message(FATAL_ERROR "Downloading firebase-ios-sdk sources using CocoaPods FAILED (exit code: ${pods_result})")
+endif()
 
 # Sets up a target to have the correct dependencies on the install pods target
 # and also adds the correct include paths to the pod header files
