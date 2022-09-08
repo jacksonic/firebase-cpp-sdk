@@ -18,10 +18,13 @@ Downloads the sources for the firebase-ios-sdk using CocoaPods.
 Usage: %s <src_dir> <dest_dir>
 """
 
+from __future__ import annotations
+
+import json
 import pathlib
 import shutil
 import subprocess
-from typing import Sequence
+from typing import Mapping, Sequence
 
 from absl import app
 from absl import logging
@@ -37,6 +40,11 @@ def main(argv: Sequence[str]) -> None:
 
   src_dir = pathlib.Path(argv[1])
   dest_dir = pathlib.Path(argv[2])
+
+  stamp_file = dest_dir / "get_ios_sdk_via_cocoapods.stamp.json"
+  if not stamp_file.exists():
+    logging.info("Loading stamp file: %s", stamp_file)
+    stamp_file_info = StampFile.read(stamp_file)
 
   if not dest_dir.exists():
     logging.info("Creating directory: %s", dest_dir)
@@ -82,6 +90,29 @@ def run_cocoapods(project_dir: pathlib.Path) -> None:
   args_str = subprocess.list2cmdline(args)
   logging.info("Running %s in %s", args_str, project_dir)
   subprocess.run(args, cwd=project_dir, check=True)
+
+
+class StampFile:
+
+  def __init__(self, files: Mapping[pathlib.Path, bytes], pod_version: str) -> None:
+    self.files = files
+    self.pod_version = pod_version
+
+  @staticmethod
+  def read(path: pathlib.Path) -> StampFile:
+    with path.open("rb") as f:
+      data = json.load(f)
+
+  def write(path: pathlib.Path) -> StampFile:
+    with path.open("wb") as f:
+      json.dumps(f, self._to_dict())
+
+  def _to_dict(self) -> Mapping[str, str]:
+    return {
+      "pod_version": self.pod_version,
+      "files": {str(path): digest for (path, digest) in self.files.items()},
+    }
+      
 
 
 if __name__ == "__main__":
