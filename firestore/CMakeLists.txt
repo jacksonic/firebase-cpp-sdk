@@ -107,6 +107,8 @@ set(android_SRCS
     src/android/load_bundle_task_progress_android.h
     src/android/metadata_changes_android.cc
     src/android/metadata_changes_android.h
+    src/android/object_arena_android.cc
+    src/android/object_arena_android.h
     src/android/promise_android.h
     src/android/promise_factory_android.h
     src/android/query_android.cc

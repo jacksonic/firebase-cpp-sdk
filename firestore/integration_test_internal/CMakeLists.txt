@@ -112,6 +112,7 @@ set(FIREBASE_INTEGRATION_TEST_ANDROID_TEST_SRCS
     src/android/firestore_integration_test_android_test.cc
     src/android/geo_point_android_test.cc
     src/android/jni_runnable_android_test.cc
+    src/android/object_arena_android_test.cc
     src/android/promise_android_test.cc
     src/android/promise_factory_android_test.cc
     src/android/settings_android_test.cc
