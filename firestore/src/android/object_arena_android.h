@@ -32,11 +32,15 @@ class ObjectArena : public jni::Object {
 
   static jni::Local<ObjectArena> Create(jni::Env&);
 
-  int32_t Add(jni::Env&, const jni::Object&) const;
+  int64_t Add(jni::Env&, const jni::Object&) const;
 
-  void Remove(jni::Env&, int32_t) const;
+  void Remove(jni::Env&, int64_t) const;
 
-  jni::Local<Object> Get(jni::Env&, int32_t) const;
+  jni::Local<Object> Get(jni::Env&, int64_t) const;
+
+  int64_t Dup(jni::Env&, int64_t) const;
+
+  int32_t Size(jni::Env&) const;
 };
 
 }  // namespace firestore

@@ -42,6 +42,7 @@
 #include "firestore/src/android/load_bundle_task_android.h"
 #include "firestore/src/android/load_bundle_task_progress_android.h"
 #include "firestore/src/android/metadata_changes_android.h"
+#include "firestore/src/android/object_arena_android.h"
 #include "firestore/src/android/promise_android.h"
 #include "firestore/src/android/query_android.h"
 #include "firestore/src/android/query_snapshot_android.h"
@@ -333,6 +334,7 @@ bool FirestoreInternal::Initialize(App* app) {
     JniRunnableBase::Initialize(loader);
     ListenerRegistrationInternal::Initialize(loader);
     MetadataChangesInternal::Initialize(loader);
+    ObjectArena::Initialize(loader);
     QueryInternal::Initialize(loader);
     QuerySnapshotInternal::Initialize(loader);
     ServerTimestampBehaviorInternal::Initialize(loader);
