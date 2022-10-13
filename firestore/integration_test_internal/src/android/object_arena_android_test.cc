@@ -31,10 +31,15 @@ namespace {
 using jni::Env;
 using jni::Local;
 
-TEST(ObjectArenaTest, AddReturnsADifferentValueOnEachInvocation) {
+TEST(ObjectArenaTest, CreateCreatesANewEmptyInstance) {
   Env env;
 
-  Local<ObjectArena> object_arena = ObjectArena::Create(env);
+  Local<ObjectArena> object_arena1 = ObjectArena::Create(env);
+  Local<ObjectArena> object_arena2 = ObjectArena::Create(env);
+
+  EXPECT_EQ(object_arena1.Size(env), 0);
+  EXPECT_EQ(object_arena2.Size(env), 0);
+  EXPECT_NE(object_arena1, object_arena2);
 }
 
 }  // namespace
