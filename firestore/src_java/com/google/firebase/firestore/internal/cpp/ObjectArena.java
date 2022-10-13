@@ -159,7 +159,7 @@ public final class ObjectArena {
    * @return the newly-generated key for the duplicate entry.
    * @throws IllegalArgumentException if the given key is unassigned.
    */
-  public synchronized Object dup(long key) {
+  public synchronized long dup(long key) {
     return add(get(key));
   }
 

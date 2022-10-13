@@ -38,11 +38,11 @@ using jni::Method;
 constexpr char kObjectArenaClassName[] =
     "com/google/firebase/firestore/internal/cpp/ObjectArena";
 Constructor<ObjectArena> kConstructor("()V");
-Method<jlong> kAdd("add", "(Ljava/lang/Object;)J");
+Method<int64_t> kAdd("add", "(Ljava/lang/Object;)J");
 Method<void> kRemove("remove", "(J)V");
 Method<Object> kGet("get", "(J)Ljava/lang/Object;");
-Method<jlong> kDup("dup", "(J)J");
-Method<jint> kSize("size", "()I");
+Method<int64_t> kDup("dup", "(J)J");
+Method<int32_t> kSize("size", "()I");
 
 }  // namespace
 
