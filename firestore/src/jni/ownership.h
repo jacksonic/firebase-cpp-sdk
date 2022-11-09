@@ -186,7 +186,8 @@ class Global : public T {
 
   Global(const Local<T>& other) {
     JNIEnv* env = EnsureEnv(other.env());
-    T::object_ = env->NewGlobalRef(other.get());
+    Local<ObjectArena> arena = ObjectArena::GetInstance(other.env());
+    arena_id_ = arena.Insert(other.env(), other.get());
   }
 
   Global& operator=(const Local<T>& other) {
