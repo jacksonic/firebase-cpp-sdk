@@ -42,7 +42,6 @@ static const char* kBootstrapAppName = "bootstrap";
 void LocateEmulator(Firestore* db) {
   // Use emulator as long as this env variable is set, regardless its value.
   if (std::getenv("USE_FIRESTORE_EMULATOR") == nullptr) {
-    LogDebug("Using Firestore Prod for testing.");
     return;
   }
 

@@ -8,6 +8,9 @@ public final class JniDemo {
     private int nextId = 0;
 
     public synchronized int put(Object obj) {
+        if (obj == null) {
+            throw new NullPointerException("obj==null");
+        }
         int id = nextId++;
         map.put(id, obj);
         return id;
