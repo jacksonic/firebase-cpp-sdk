@@ -108,22 +108,7 @@ set(FIREBASE_INTEGRATION_TEST_PORTABLE_TEST_SRCS
 
 # These sources contain the actual tests that run on Android only.
 set(FIREBASE_INTEGRATION_TEST_ANDROID_TEST_SRCS
-    src/android/field_path_portable_test.cc
-    src/android/firestore_integration_test_android_test.cc
-    src/android/geo_point_android_test.cc
-    src/android/jni_runnable_android_test.cc
-    src/android/promise_android_test.cc
-    src/android/promise_factory_android_test.cc
-    src/android/settings_android_test.cc
-    src/android/snapshot_metadata_android_test.cc
-    src/android/timestamp_android_test.cc
-    src/android/transaction_options_android_test.cc
-    src/jni/declaration_test.cc
-    src/jni/env_test.cc
-    src/jni/object_test.cc
-    src/jni/ownership_test.cc
-    src/jni/task_test.cc
-    src/jni/traits_test.cc
+    src/android/jni_demo_android_test.cc
 )
 
 # These sources contain the actual tests that run on non-Android only.
@@ -167,10 +152,7 @@ else()
   # Include portable source files and tests, plus Android-specific source files
   # and tests.
   set(FIREBASE_INTEGRATION_TEST_SRCS
-    ${FIREBASE_INTEGRATION_TEST_PORTABLE_SUPPORT_SRCS}
-    ${FIREBASE_INTEGRATION_TEST_ANDROID_SUPPORT_SRCS}
-    ${FIREBASE_INTEGRATION_TEST_PORTABLE_TEST_SRCS}
-    ${FIREBASE_INTEGRATION_TEST_ANDROID_TEST_SRCS}
+    src/android/jni_demo_android_test.cc
   )
 endif()
 
