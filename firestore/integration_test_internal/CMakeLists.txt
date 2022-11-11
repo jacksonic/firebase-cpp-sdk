@@ -152,6 +152,8 @@ else()
   # Include portable source files and tests, plus Android-specific source files
   # and tests.
   set(FIREBASE_INTEGRATION_TEST_SRCS
+    ${FIREBASE_INTEGRATION_TEST_PORTABLE_SUPPORT_SRCS}
+    ${FIREBASE_INTEGRATION_TEST_ANDROID_SUPPORT_SRCS}
     src/android/jni_demo_android_test.cc
   )
 endif()
