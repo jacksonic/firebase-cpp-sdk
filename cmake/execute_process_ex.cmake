@@ -63,6 +63,13 @@ function(execute_process_ex)
     "execute_process_ex(COMMENT=${ARG_COMMENT}): "
     "Command starting: ${ARG_COMMAND_STR}"
   )
+  if(NOT ("${ARG_WORKING_DIRECTORY}" STREQUAL ""))
+    message(
+      STATUS
+      "execute_process_ex(COMMENT=${ARG_COMMENT}): "
+      "Running command in directory WORKING_DIRECTORY: ${ARG_WORKING_DIRECTORY}"
+    )
+  endif()
 
   # Build up the arguments to specify to execute_process().
   set(
