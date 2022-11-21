@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+include(execute_process_ex)
+
 if(APPLE AND NOT ANDROID)
   set(settings_apple_SRCS
       src/common/settings_apple.mm)
@@ -416,3 +418,74 @@ endif()
 
 cpp_pack_library(firebase_firestore "")
 cpp_pack_public_headers()
+
+# Download absl so that the Android builds can make use of the header-only
+# components of absl.
+if (ANDROID)
+  set(
+    FIRESTORE_ABSL_DOWNLOADER_CMAKE_PROJECT_SOURCE_DIR
+    "${CMAKE_CURRENT_BINARY_DIR}/external/abseil-cpp"
+  )
+  file(
+    MAKE_DIRECTORY
+    "${FIRESTORE_ABSL_DOWNLOADER_CMAKE_PROJECT_SOURCE_DIR}"
+  )
+  execute_process_ex(
+    COMMENT
+      "create CMakeLists.txt for abseil-cpp downloader cmake project"
+    COMMAND
+      "${FIREBASE_HOST_CMAKE_COMMAND}"
+      "-E"
+      "copy"
+      "${CMAKE_CURRENT_LIST_DIR}/abseil-cpp.cmake"
+      "${FIRESTORE_ABSL_DOWNLOADER_CMAKE_PROJECT_SOURCE_DIR}/CMakeLists.txt"
+  )
+
+  set(
+    FIRESTORE_ABSL_DOWNLOADER_CMAKE_PROJECT_BINARY_DIR
+    "${CMAKE_CURRENT_BINARY_DIR}/external/abseil-cpp-build"
+  )
+  file(
+    MAKE_DIRECTORY
+    "${FIRESTORE_ABSL_DOWNLOADER_CMAKE_PROJECT_BINARY_DIR}"
+  )
+
+  execute_process_ex(
+    COMMENT
+      "configure cmake project for downloading abseil-cpp"
+    COMMAND
+      "${FIREBASE_HOST_CMAKE_COMMAND}"
+      "${FIRESTORE_ABSL_DOWNLOADER_CMAKE_PROJECT_SOURCE_DIR}"
+      "-DEXTERNAL_PROJECT_HTTP_HEADER=${EXTERNAL_PROJECT_HTTP_HEADER}"
+    WORKING_DIRECTORY
+      "${FIRESTORE_ABSL_DOWNLOADER_CMAKE_PROJECT_BINARY_DIR}"
+  )
+
+  execute_process_ex(
+    COMMENT
+      "build cmake project for downloading abseil-cpp"
+    COMMAND
+      "${FIREBASE_HOST_CMAKE_COMMAND}"
+      "--build"
+      "."
+    WORKING_DIRECTORY
+      "${FIRESTORE_ABSL_DOWNLOADER_CMAKE_PROJECT_BINARY_DIR}"
+  )
+
+  set(
+    FIRESTORE_ABSL_INCLUDE_DIR
+    "${FIRESTORE_ABSL_DOWNLOADER_CMAKE_PROJECT_BINARY_DIR}/src/abseil-cpp"
+  )
+  if(NOT (IS_DIRECTORY "${FIRESTORE_ABSL_INCLUDE_DIR}"))
+    message(
+      FATAL_ERROR
+      "FIRESTORE_ABSL_INCLUDE_DIR not found: ${FIRESTORE_ABSL_INCLUDE_DIR}"
+    )
+  endif()
+
+  target_include_directories(
+    firebase_firestore
+    PUBLIC
+    "${FIRESTORE_ABSL_INCLUDE_DIR}"
+  )
+endif()  # if (ANDROID)
